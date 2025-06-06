@@ -176,6 +176,7 @@
     white-space: pre-line;
     display: none; /* დასაწყისში დამალულია */
   }
+
   /* Animations */
   @keyframes fadeInUp {
     from {
@@ -186,6 +187,82 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Password Popup Styles */
+  #passwordPopup {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 1000;
+  }
+  #passwordPopup.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #passwordPopup .popup-content {
+    background: #6e2a92;
+    padding: 30px 35px;
+    border-radius: 20px;
+    box-shadow: 0 0 35px #bb99ff;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    color: white;
+    font-family: 'Jomhuria', cursive, Arial, sans-serif;
+    animation: fadeInUp 0.5s ease forwards;
+  }
+  #passwordPopup h3 {
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    text-shadow: 0 0 10px #d1aaff;
+  }
+  #passwordPopup input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 12px #bb99ff inset;
+    background: rgba(255 255 255 / 0.15);
+    color: white;
+    text-align: center;
+    font-weight: 700;
+  }
+  #passwordPopup input[type="password"]::placeholder {
+    color: rgba(255 255 255, 0.7);
+  }
+  #passwordPopup button {
+    background: #9b59b6;
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 12px 30px;
+    cursor: pointer;
+    box-shadow: 0 0 20px #bb99ff;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    user-select: none;
+  }
+  #passwordPopup button:hover {
+    background-color: #6e2a92;
+    box-shadow: 0 0 30px #d1aaff;
+  }
+  #passwordError {
+    margin-top: 10px;
+    color: #ff6b6b;
+    font-weight: 700;
+    font-size: 1rem;
+    display: none;
+    text-shadow: 0 0 6px #ff4c4c;
   }
 </style>
 </head>
@@ -270,93 +347,96 @@
         </div>
       </div>
     </div>
- 
   </div>
 
   <button type="submit" class="vote-btn">შეაფასე მონაწილეები</button>
 </form>
 
-<!-- ღილაკი შედეგების ნახვისთვის -->
 <button id="showResultsBtn" type="button">შედეგების ნახვა</button>
 
-<!-- შედეგების ბლოკი -->
 <pre id="results" aria-live="polite" role="region"></pre>
 
-  <!-- Password Popup UI -->
+<!-- Password Popup UI -->
 <div id="passwordPopup">
   <div class="popup-content">
     <h3>შეიყვანეთ პაროლი</h3>
-    <input type="password" id="passwordInput" placeholder="პაროლი" />
-    <button onclick="checkPassword()">დადასტურება</button>
+    <input type="password" id="passwordInput" placeholder="პაროლი" autocomplete="off" />
+    <button id="passwordSubmitBtn">დადასტურება</button>
     <div class="error" id="passwordError">პაროლი არასწორია!</div>
   </div>
 </div>
-  
+
 <script>
-  <script>
   const form = document.getElementById('votingForm');
   const results = document.getElementById('results');
   const showResultsBtn = document.getElementById('showResultsBtn');
-
-  const passwordModal = document.getElementById('passwordModal');
+  const passwordPopup = document.getElementById('passwordPopup');
   const passwordInput = document.getElementById('passwordInput');
-  const submitPassword = document.getElementById('submitPassword');
-  const cancelPassword = document.getElementById('cancelPassword');
+  const passwordSubmitBtn = document.getElementById('passwordSubmitBtn');
+  const passwordError = document.getElementById('passwordError');
 
-  const correctPassword = 'ლაურამ123ქნა';
+  const correctPassword = "ლაურამ123ქნა";
 
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const data = new FormData(form);
-    let output = '';
-
-    for (const participant of document.querySelectorAll('.participant')) {
-      const name = participant.dataset.name;
-      if (!name) continue;
-
-      output += `${name}:\n`;
-
-      const inputs = participant.querySelectorAll('input[type=number]');
-      for (const input of inputs) {
-        output += `  ${input.name.replace(name.toLowerCase() + '_', '')}: ${input.value}\n`;
-      }
-      output += '\n';
-    }
-
-    results.textContent = output;
-    results.style.display = 'none';
-    alert('შენი შეფასება მიღებულია! შედეგების სანახავად დააჭირე ღილაკს "შედეგების ნახვა".');
+  // ფორმის სუბმითი - prevent default + alert
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    alert('შენი შეფასებები წარმატებით გაიგზავნა!');
+    form.reset();
   });
 
+  // "შედეგების ნახვა" ღილაკის დაჭერა - გამოაჩენს პაროლის ფანჯარას
   showResultsBtn.addEventListener('click', () => {
-    if (results.textContent.trim() === '') {
-      alert('მოდი, ჯერ შეაფასე მონაწილეები და მხოლოდ მერე დააჭირე შედეგების ნახვას.');
-      return;
-    }
-    passwordModal.style.display = 'flex';
     passwordInput.value = '';
+    passwordError.style.display = 'none';
+    passwordPopup.classList.add('active');
     passwordInput.focus();
   });
 
-  submitPassword.addEventListener('click', () => {
-    const enteredPassword = passwordInput.value;
-    if (enteredPassword === correctPassword) {
-      results.style.display = 'block';
-      passwordModal.style.display = 'none';
-      alert('შედეგები გახსნილია.');
-    } else {
-      alert('პაროლი არასწორია!');
+  // პაროლის დადასტურება ღილაკი
+  passwordSubmitBtn.addEventListener('click', checkPassword);
+
+  // Enter კლავიშითაც მუშაობა პაროლის შეყვანაზე
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      checkPassword();
     }
   });
 
-  cancelPassword.addEventListener('click', () => {
-    passwordModal.style.display = 'none';
+  // პაროლის შემოწმება
+  function checkPassword() {
+    const entered = passwordInput.value.trim();
+    if (entered === correctPassword) {
+      passwordPopup.classList.remove('active');
+      passwordError.style.display = 'none';
+      showResults();
+    } else {
+      passwordError.style.display = 'block';
+    }
+  }
+
+  // შედეგების ჩვენება
+  function showResults() {
+    // ამ მაგალითში ვიმეორებთ უბრალოდ ინფორმაციას, შეგიძლია აქ ნებისმიერი ლოგიკა დაწერო
+    results.textContent = `გამარჯობა! თქვენ წარმატებით შეხვდით შედეგების განყოფილებაში.
+აქ მომავალში განთავსდება რეალური შეფასებების და ხილვების ინფორმაცია.`;
+    results.style.display = 'block';
+    results.scrollIntoView({behavior: 'smooth'});
+  }
+
+  // კლავიატურის 'Escape' ღილაკის საშუალებით ფანჯრის დახურვა
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && passwordPopup.classList.contains('active')) {
+      passwordPopup.classList.remove('active');
+      passwordError.style.display = 'none';
+    }
   });
 
-  // Close modal if user clicks outside the modal content
-  passwordModal.addEventListener('click', (e) => {
-    if (e.target === passwordModal) {
-      passwordModal.style.display = 'none';
+  // კლიკით მოდალის გარეთ დახურვა
+  passwordPopup.addEventListener('click', (e) => {
+    if (e.target === passwordPopup) {
+      passwordPopup.classList.remove('active');
+      passwordError.style.display = 'none';
     }
   });
 </script>
