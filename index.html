@@ -282,10 +282,28 @@
 <!-- შედეგების ბლოკი -->
 <pre id="results" aria-live="polite" role="region"></pre>
 
+  <!-- Password Popup UI -->
+<div id="passwordPopup">
+  <div class="popup-content">
+    <h3>შეიყვანეთ პაროლი</h3>
+    <input type="password" id="passwordInput" placeholder="პაროლი" />
+    <button onclick="checkPassword()">დადასტურება</button>
+    <div class="error" id="passwordError">პაროლი არასწორია!</div>
+  </div>
+</div>
+  
 <script>
+  <script>
   const form = document.getElementById('votingForm');
   const results = document.getElementById('results');
   const showResultsBtn = document.getElementById('showResultsBtn');
+
+  const passwordModal = document.getElementById('passwordModal');
+  const passwordInput = document.getElementById('passwordInput');
+  const submitPassword = document.getElementById('submitPassword');
+  const cancelPassword = document.getElementById('cancelPassword');
+
+  const correctPassword = 'ლაურამ123ქნა';
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -294,6 +312,8 @@
 
     for (const participant of document.querySelectorAll('.participant')) {
       const name = participant.dataset.name;
+      if (!name) continue;
+
       output += `${name}:\n`;
 
       const inputs = participant.querySelectorAll('input[type=number]');
@@ -304,22 +324,39 @@
     }
 
     results.textContent = output;
-    results.style.display = 'none'; // ავტომატურად დამალე შედეგები ფორმის ჩაბარების შემდეგ
+    results.style.display = 'none';
     alert('შენი შეფასება მიღებულია! შედეგების სანახავად დააჭირე ღილაკს "შედეგების ნახვა".');
   });
 
   showResultsBtn.addEventListener('click', () => {
-    const password = prompt('შეიყვანეთ პაროლი შედეგების სანახავად:');
+    if (results.textContent.trim() === '') {
+      alert('მოდი, ჯერ შეაფასე მონაწილეები და მხოლოდ მერე დააჭირე შედეგების ნახვას.');
+      return;
+    }
+    passwordModal.style.display = 'flex';
+    passwordInput.value = '';
+    passwordInput.focus();
+  });
 
-    if (password === 'ლაურამ123ქნა') {
-      if (results.textContent.trim() === '') {
-        alert('მოდი, ჯერ შეაფასე მონაწილეები და მხოლოდ მერე დააჭირე შედეგების ნახვას.');
-        return;
-      }
+  submitPassword.addEventListener('click', () => {
+    const enteredPassword = passwordInput.value;
+    if (enteredPassword === correctPassword) {
       results.style.display = 'block';
+      passwordModal.style.display = 'none';
       alert('შედეგები გახსნილია.');
     } else {
       alert('პაროლი არასწორია!');
+    }
+  });
+
+  cancelPassword.addEventListener('click', () => {
+    passwordModal.style.display = 'none';
+  });
+
+  // Close modal if user clicks outside the modal content
+  passwordModal.addEventListener('click', (e) => {
+    if (e.target === passwordModal) {
+      passwordModal.style.display = 'none';
     }
   });
 </script>
